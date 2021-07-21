@@ -237,23 +237,23 @@ static void BM_MultiThread_Limit(benchmark::State& state) {
 //         benchmark::CreateRange(nums, nums, 1)
 //     })
 //     ;
-BENCHMARK(BM_MultiThread)
+/*BENCHMARK(BM_MultiThread)
     ->Iterations(1)
     // {key_size, value_size, total_nums}
     ->Args({128, 128, 1 << 20})
     ->ThreadRange(1, thread_end)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond)
-    ;
+    ;*/
 
 
-BENCHMARK(BM_MultiThread_Sep)
+/*BENCHMARK(BM_MultiThread_Sep)
     ->Iterations(1)
     ->Args({128, 128, (1 << 20) * 2})
     ->ThreadRange(1, thread_end)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond)
-    ;
+    ;*/
 // Run the benchmark
 
 BENCHMARK(BM_MultiThread_Limit)
