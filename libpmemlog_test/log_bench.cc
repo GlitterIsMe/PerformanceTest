@@ -13,6 +13,7 @@
 #include <numeric>
 /* size of the pmemlog pool -- 1 GB */
 #define POOL_SIZE ((size_t)(1 << 30))
+#define GLOBAL_LOG_NUM 16
 
 const char path[] = "/mnt/AEP1/gs/logfile";
 
@@ -23,6 +24,8 @@ const uint64_t value_begin_size = 8;
 const uint64_t value_end_size = 256;
 const uint64_t nums = 1024 * 1024;
 const uint64_t thread_end = 32;
+
+const PMEMlogpool* global_log[GLOBAL_LOG_NUM];
 /*
  * printit -- log processing callback for use with pmemlog_walk()
  */
@@ -68,6 +71,22 @@ int multi_thread_test(uint64_t key_size, uint64_t value_size, int nums, PMEMlogp
         }
     }
     return 0;
+}
+
+void Init_global_log(){
+    for (int i = 0; i < GLOBAL_LOG_NUM; i++) {
+        PMEMlogpool * tmp = pmemlog_create(path, POOL_SIZE, 0666);
+        if (tmp == NULL)
+            tmp = pmemlog_open(path);
+
+        if (tmp == NULL)
+        {
+            perror(path);
+            exit(1);
+        }
+        pmemlog_rewind(tmp);
+        global_log[i] = tmp;
+    }
 }
 
 static void BM_SingleThread(benchmark::State &state)
@@ -179,6 +198,17 @@ static void BM_MultiThread_Sep(benchmark::State &state)
     }
     //
     pmemlog_close(plp);
+    state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
+}
+
+static void BM_MultiThread_Limit(benchmark::State& state) {
+    auto key_size = state.range(0);
+    auto value_size = state.range(1);
+    auto nums = state.range(2);
+    srand((unsigned int) time(NULL));
+    for (auto _ : state) {
+        single_thread_append((key_size + value_size) * nums * state.iterations() / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
+    }
     state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
 }
 
