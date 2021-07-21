@@ -76,13 +76,13 @@ int multi_thread_test(uint64_t key_size, uint64_t value_size, int nums, PMEMlogp
 void init_global_log(){
     for (int i = 0; i < GLOBAL_LOG_NUM; i++) {
         std::string thread_log = path + std::to_string(i);
-        PMEMlogpool * tmp = pmemlog_create(thread_log.c_str(), POOL_SIZE, 0666);
+        PMEMlogpool *tmp = pmemlog_create(thread_log.c_str(), POOL_SIZE, 0666);
         if (tmp == NULL)
-            tmp = pmemlog_open(path);
+            tmp = pmemlog_open(thread_log);
 
         if (tmp == NULL)
         {
-            perror(path);
+            perror(thread_log);
             exit(1);
         }
         pmemlog_rewind(tmp);
@@ -93,6 +93,7 @@ void init_global_log(){
 void close_global_log() {
     for (int i = 0; i < GLOBAL_LOG_NUM; i++) {
         pmemlog_close(global_log[i]);
+        global_log[i] = nullptr;
     }
 }
 
