@@ -59,12 +59,30 @@ int single_thread_append(benchmark::State &state, uint64_t key_size, uint64_t va
 int multi_thread_test(uint64_t key_size, uint64_t value_size, int nums, PMEMlogpool *plp)
 {
     /* create the pmemlog pool or open it if it already exists */
+    /* each thread append is related to 1 log*/
 
     std::string buf(key_size + value_size, '1');
 
     for (; nums > 0; nums--)
     {
         if (pmemlog_append(plp, buf.data(), buf.size()) < 0)
+        {
+            perror("pmemlog_append");
+            exit(1);
+        }
+    }
+    return 0;
+}
+
+int multi_thread_test_random(uint64_t key_size, uint64_t value_size, int nums)
+{
+    /* create the pmemlog pool or open it if it already exists */
+    std::string buf(key_size + value_size, '1');
+    srand((unsigned int)(time(NULL)));
+
+    for (; nums > 0; nums--)
+    {
+        if (pmemlog_append(global_log[rand() % GLOBAL_LOG_NUM], buf.data(), buf.size()) < 0)
         {
             perror("pmemlog_append");
             exit(1);
@@ -218,7 +236,8 @@ static void BM_MultiThread_Limit(benchmark::State& state) {
         init_global_log();
     }
     for (auto _ : state) {
-        single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
+        //single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
+        multi_thread_test_random(key_size, value_size, nums / state.threads);
     }
     state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
     if (state.thread_index == 0) {
