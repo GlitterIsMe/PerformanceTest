@@ -75,7 +75,8 @@ int multi_thread_test(uint64_t key_size, uint64_t value_size, int nums, PMEMlogp
 
 void Init_global_log(){
     for (int i = 0; i < GLOBAL_LOG_NUM; i++) {
-        PMEMlogpool * tmp = pmemlog_create(path, POOL_SIZE, 0666);
+        std::string thread_log = path + std::to_string(i);
+        PMEMlogpool * tmp = pmemlog_create(thread_log, POOL_SIZE, 0666);
         if (tmp == NULL)
             tmp = pmemlog_open(path);
 
@@ -86,6 +87,12 @@ void Init_global_log(){
         }
         pmemlog_rewind(tmp);
         global_log[i] = tmp;
+    }
+}
+
+void Close_global_log() {
+    for (int i = 0; i < GLOBAL_LOG_NUM; i++) {
+        pmemlog_close(global_log[i]);
     }
 }
 
@@ -206,10 +213,12 @@ static void BM_MultiThread_Limit(benchmark::State& state) {
     auto value_size = state.range(1);
     auto nums = state.range(2);
     srand((unsigned int) time(NULL));
+    Init_global_log();
     for (auto _ : state) {
         single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
     }
     state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
+    Close_global_log();
 }
 
 // Register the function as a benchmark
