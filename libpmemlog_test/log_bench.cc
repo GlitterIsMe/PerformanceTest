@@ -221,7 +221,9 @@ static void BM_MultiThread_Limit(benchmark::State& state) {
         single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
     }
     state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
-    close_global_log();
+    if (state.thread_index == 0) {
+        close_global_log();
+    }
 }
 
 // Register the function as a benchmark
