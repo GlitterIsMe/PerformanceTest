@@ -15,7 +15,7 @@
 #define POOL_SIZE ((size_t)(1 << 30))
 #define GLOBAL_LOG_NUM 16
 
-const char path[] = "/mnt/AEP1/gs/logfile";
+const char path[] = "/pmem0/zyw/logfile";
 
 
 const uint64_t key_begin_size = 8;
@@ -23,7 +23,7 @@ const uint64_t key_end_size = 256;
 const uint64_t value_begin_size = 8;
 const uint64_t value_end_size = 256;
 const uint64_t nums = 1024 * 1024;
-const uint64_t thread_end = 32;
+const uint64_t thread_end = 64;
 
 const PMEMlogpool* global_log[GLOBAL_LOG_NUM];
 /*
@@ -207,7 +207,7 @@ static void BM_MultiThread_Limit(benchmark::State& state) {
     auto nums = state.range(2);
     srand((unsigned int) time(NULL));
     for (auto _ : state) {
-        single_thread_append((key_size + value_size) * nums * state.iterations() / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
+        single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
     }
     state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
 }
