@@ -25,7 +25,7 @@ const uint64_t value_end_size = 256;
 const uint64_t nums = 1024 * 1024;
 const uint64_t thread_end = 64;
 
-const PMEMlogpool* global_log[GLOBAL_LOG_NUM];
+PMEMlogpool* global_log[GLOBAL_LOG_NUM];
 /*
  * printit -- log processing callback for use with pmemlog_walk()
  */
@@ -191,9 +191,9 @@ static void BM_MultiThread_Sep(benchmark::State &state)
 
     for (auto _ : state)
     {
-        state.PauseTiming();
-        pmemlog_rewind(plp);
-        state.ResumeTiming();
+        //state.PauseTiming();
+        //pmemlog_rewind(plp);
+        //state.ResumeTiming();
         single_thread_append(state, key_size, value_size, nums / state.threads, plp);
     }
     //
@@ -243,6 +243,14 @@ BENCHMARK(BM_MultiThread_Sep)
     ->Unit(benchmark::kMillisecond)
     ;
 // Run the benchmark
+
+BENCHMARK(BM_MultiThread_Limit)
+->Iterations(1)
+->Args({128, 128, (1 << 20) * 2})
+->ThreadRange(1, thread_end)
+->UseRealTime()
+->Unit(benchmark::kMillisecond)
+;
 
 BENCHMARK_MAIN();
 
