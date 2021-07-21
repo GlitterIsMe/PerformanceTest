@@ -78,11 +78,11 @@ void init_global_log(){
         std::string thread_log = path + std::to_string(i);
         PMEMlogpool *tmp = pmemlog_create(thread_log.c_str(), POOL_SIZE, 0666);
         if (tmp == NULL)
-            tmp = pmemlog_open(thread_log);
+            tmp = pmemlog_open(thread_log.c_str());
 
         if (tmp == NULL)
         {
-            perror(thread_log);
+            perror(thread_log.c_str());
             exit(1);
         }
         pmemlog_rewind(tmp);
