@@ -69,7 +69,6 @@ int multi_thread_test(uint64_t key_size, uint64_t value_size, int nums, NVMLog *
     std::string buf(key_size + value_size, '1');
 
     for (; nums > 0; nums--) {
-
         AllocRes res = plp->Alloc(buf.size());
         if (res.first == SUCCESS) {
             plp->Append(res.second, buf);
@@ -95,6 +94,9 @@ int multi_thread_test_random(uint64_t key_size, uint64_t value_size, int nums) {
 
 char* map_pmem_file(const std::string& path, size_t mapped_size, size_t *mapped_len, int *is_pmem) {
     char* raw = (char*)pmem_map_file(path.c_str(), mapped_size, PMEM_FILE_CREATE, 0, mapped_len, is_pmem);
+    if (raw == nullptr) {
+        fprintf(stder, "map file failed [%s]\n", strerror(errno));
+    }
     return raw;
 }
 
@@ -123,7 +125,7 @@ static void BM_SingleThread(benchmark::State &state) {
     /* create the pmemlog pool or open it if it already exists */
     size_t mapped_len;
     int is_pmem;
-    char* tmp_file = map_pmem_file(thread_log, POOL_SIZE, &mapped_len, &is_pmem);
+    char* tmp_file = map_pmem_file(path, POOL_SIZE, &mapped_len, &is_pmem);
     plp = new NVMLog(tmp_file, mapped_len, is_pmem);
 
     auto key_size = state.range(0);
@@ -146,7 +148,7 @@ static void BM_MultiThread(benchmark::State &state) {
         /* create the pmemlog pool or open it if it already exists */
         size_t mapped_len;
         int is_pmem;
-        char* tmp_file = map_pmem_file(thread_log, POOL_SIZE, &mapped_len, &is_pmem);
+        char* tmp_file = map_pmem_file(path, POOL_SIZE, &mapped_len, &is_pmem);
         plp = new NVMLog(tmp_file, mapped_len, is_pmem);
     }
 
@@ -179,7 +181,7 @@ static void BM_MultiThread_Sep(benchmark::State &state) {
     int is_pmem;
     char* tmp_file = map_pmem_file(thread_log, POOL_SIZE, &mapped_len, &is_pmem);
 
-    plp = new NVMLog(tmp_file, mapped_len, is_pmem);
+    plp = new NVMLog(tmp_file, 0, mapped_len);
 
     auto key_size = state.range(0);
     auto value_size = state.range(1);

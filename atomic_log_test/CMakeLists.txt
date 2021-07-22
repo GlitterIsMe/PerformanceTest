@@ -8,7 +8,7 @@ include(FindThreads)
 find_package(PkgConfig QUIET)
 pkg_check_modules(LIBPMEM REQUIRED libpmem)
 
-add_executable(atomic_log_bench " ")
+add_executable(atomic_log_bench "")
 target_sources(
         atomic_log_bench PRIVATE
         "log.cc"
@@ -16,4 +16,4 @@ target_sources(
         "atomic_log_bench.cc"
         )
 target_include_directories(atomic_log_bench PUBLIC ${LIBPMEM_INCLUDE_DIRS})
-target_link_libraries(atomic_log_bench benchmark ${LIBPMEM_LIBRAIRES})
+target_link_libraries(atomic_log_bench benchmark ${LIBPMEM_LIBRARIES})
