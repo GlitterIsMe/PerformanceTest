@@ -22,6 +22,8 @@ add_subdirectory(libpmemlog_test)
 
 #add_subdirectory(viper_test)
 
+add_subdirectory(atomic_log_test)
+
 add_subdirectory(benchmark_test)
 
 ## script to print all variables
