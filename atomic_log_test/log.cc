@@ -17,18 +17,11 @@ AllocRes NVMLog::Alloc(uint64_t alloc_size) {
     if (cur_.load(std::memory_order_acquire) + alloc_size >= size_) {
         return AllocRes (FULL, 0);
     }
-    bool alloc_success = false;
     unsigned int cur = 0;
-    int try_times = 0;
     do {
         cur = cur_.load(std::memory_order_acquire);
-        alloc_success = cur_.compare_exchange_weak(cur, cur + alloc_size,
-                                              std::memory_order_release);
-        try_times++;
-        if (try_times > 10) {
-            return AllocRes (FAILED, 0);
-        }
-    } while (!alloc_success);
+    } while (!cur_.compare_exchange_weak(cur, cur + alloc_size,
+                                         std::memory_order_release, std::memory_order_relaxed));
     return AllocRes (SUCCESS, cur);
 }
 

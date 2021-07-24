@@ -32,7 +32,7 @@ const uint64_t key_end_size = 256;
 const uint64_t value_begin_size = 8;
 const uint64_t value_end_size = 256;
 const uint64_t nums = 1024 * 1024;
-const uint64_t thread_end = 64;
+const uint64_t thread_end = 48;
 
 NVMLog *global_log[GLOBAL_LOG_NUM];
 
@@ -77,13 +77,19 @@ int multi_thread_test(uint64_t key_size, uint64_t value_size, int nums, NVMLog *
     return 0;
 }
 
-int multi_thread_test_random(uint64_t key_size, uint64_t value_size, int nums) {
+int multi_thread_test_random(benchmark::State& state, uint64_t key_size, uint64_t value_size, int nums) {
     /* create the pmemlog pool or open it if it already exists */
+    state.PauseTiming();
     std::string buf(key_size + value_size, '1');
     srand((unsigned int) (time(NULL)));
+    std::vector<int> log_seq;
+    for (int i = 0; i < nums; i++) {
+        log_seq.push_back(rand() % GLOBAL_LOG_NUM);
+    }
+    state.ResumeTiming();
 
-    for (; nums > 0; nums--) {
-        NVMLog* plp = global_log[rand() % GLOBAL_LOG_NUM];
+    for (auto id : log_seq) {
+        NVMLog* plp = global_log[id];
         AllocRes res = plp->Alloc(buf.size());
         if (res.first == SUCCESS) {
             plp->Append(res.second, buf);
@@ -95,7 +101,7 @@ int multi_thread_test_random(uint64_t key_size, uint64_t value_size, int nums) {
 char* map_pmem_file(const std::string& path, size_t mapped_size, size_t *mapped_len, int *is_pmem) {
     char* raw = (char*)pmem_map_file(path.c_str(), mapped_size, PMEM_FILE_CREATE, 0, mapped_len, is_pmem);
     if (raw == nullptr) {
-        fprintf(stder, "map file failed [%s]\n", strerror(errno));
+        fprintf(stderr, "map file failed [%s]\n", strerror(errno));
     }
     return raw;
 }
@@ -205,7 +211,7 @@ static void BM_MultiThread_Limit(benchmark::State &state) {
     }
     for (auto _ : state) {
         //single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
-        multi_thread_test_random(key_size, value_size, nums / state.threads);
+        multi_thread_test_random(state, key_size, value_size, nums / state.threads);
     }
     state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
     if (state.thread_index == 0) {
@@ -247,7 +253,7 @@ static void BM_MultiThread_Limit(benchmark::State &state) {
 
 BENCHMARK(BM_MultiThread_Limit)
         ->Iterations(1)
-        ->Args({128, 128, (1 << 20) * 2})
+        ->Args({128, 128, (1 << 25)})
         ->ThreadRange(1, thread_end)
         ->UseRealTime()
         ->Unit(benchmark::kMillisecond);

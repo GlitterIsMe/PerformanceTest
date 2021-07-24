@@ -220,11 +220,11 @@ static void BM_MultiThread_Sep(benchmark::State &state)
         //state.PauseTiming();
         //pmemlog_rewind(plp);
         //state.ResumeTiming();
-        single_thread_append(state, key_size, value_size, nums / state.threads, plp);
+        single_thread_append(state, key_size, value_size, nums, plp);
     }
     //
     pmemlog_close(plp);
-    state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
+    state.SetBytesProcessed((key_size + value_size) * nums * state.iterations());
 }
 
 static void BM_MultiThread_Limit(benchmark::State& state) {
@@ -237,9 +237,9 @@ static void BM_MultiThread_Limit(benchmark::State& state) {
     }
     for (auto _ : state) {
         //single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
-        multi_thread_test_random(key_size, value_size, nums / state.threads);
+        multi_thread_test_random(key_size, value_size, nums);
     }
-    state.SetBytesProcessed((key_size + value_size) * nums * state.iterations() / state.threads);
+    state.SetBytesProcessed((key_size + value_size) * nums * state.iterations());
     if (state.thread_index == 0) {
         close_global_log();
     }
