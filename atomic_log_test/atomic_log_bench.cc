@@ -21,7 +21,7 @@
 #include "log.h"
 
 /* size of the pmemlog pool -- 1 GB */
-#define POOL_SIZE ((size_t)(1 << 30))
+#define POOL_SIZE ((size_t)(1 << 28))
 #define GLOBAL_LOG_NUM 16
 
 const char path[] = "/pmem0/zyw/logfile";
