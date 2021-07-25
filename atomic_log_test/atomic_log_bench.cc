@@ -123,7 +123,8 @@ void init_global_log(uint64_t total_num_req, int thread_num) {
     uint64_t req_per_log = total_num_req / GLOBAL_LOG_NUM;
     uint64_t req_per_threads = total_num_req / thread_num;
     for (int i = 0; i < thread_num; ++i) {
-        reqs.push_back(std::vector<int>);
+        std::vector<int> tmp;
+        reqs.push_back(tmp);
     }
     srand((unsigned int) time(NULL));
     for (int log_id = 0; log_id < GLOBAL_LOG_NUM; log_id++) {

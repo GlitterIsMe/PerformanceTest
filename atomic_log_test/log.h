@@ -20,7 +20,7 @@ typedef std::pair<AllocStatus, uint64_t> AllocRes;
 
 class NVMLog {
 public:
-    NVMLog(const char* base, uint64_t start_offset, uint64_t size);
+    NVMLog(char* base, uint64_t start_offset, uint64_t size);
     NVMLog(std::string path, uint64_t init_size);
     ~NVMLog();
 

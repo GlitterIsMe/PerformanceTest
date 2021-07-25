@@ -3,8 +3,10 @@
 //
 
 #include "log.h"
+#include "string.h"
+#include "unistd.h"
 
-NVMLog::NVMLog(const char *base, uint64_t start_offset, uint64_t size)
+NVMLog::NVMLog(char *base, uint64_t start_offset, uint64_t size)
     :base_(base), start_(start_offset), size_(size){
     cur_ = 0;
 }
