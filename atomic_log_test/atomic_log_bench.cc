@@ -23,6 +23,7 @@
 /* size of the pmemlog pool -- 1 GB */
 #define POOL_SIZE ((size_t)(1 << 28))
 #define GLOBAL_LOG_NUM 16
+#define INIT_LOG_SIZE 256 * 1024 * 1024
 
 const char path[] = "/pmem0/zyw/logfile";
 
@@ -35,6 +36,8 @@ const uint64_t nums = 1024 * 1024;
 const uint64_t thread_end = 48;
 
 NVMLog *global_log[GLOBAL_LOG_NUM];
+std::vector<std::vector<int>> reqs;
+
 
 /*
  * printit -- log processing callback for use with pmemlog_walk()
@@ -81,14 +84,15 @@ int multi_thread_test_random(benchmark::State& state, uint64_t key_size, uint64_
     /* create the pmemlog pool or open it if it already exists */
     state.PauseTiming();
     std::string buf(key_size + value_size, '1');
-    srand((unsigned int) (time(NULL)));
-    std::vector<int> log_seq;
+    /*srand((unsigned int) (time(NULL)));
+    std::vector<int> &log_seq;
     for (int i = 0; i < nums; i++) {
         log_seq.push_back(rand() % GLOBAL_LOG_NUM);
-    }
+    }*/
     state.ResumeTiming();
 
-    for (auto id : log_seq) {
+    std::vector<int> &req = reqs[state.thread_index];
+    for (auto id : req) {
         NVMLog* plp = global_log[id];
         AllocRes res = plp->Alloc(buf.size());
         if (res.first == SUCCESS) {
@@ -106,13 +110,34 @@ char* map_pmem_file(const std::string& path, size_t mapped_size, size_t *mapped_
     return raw;
 }
 
-void init_global_log() {
+void init_global_log(uint64_t total_num_req, int thread_num) {
     for (int i = 0; i < GLOBAL_LOG_NUM; i++) {
         std::string thread_log = path + std::to_string(i);
-        size_t mapped_len;
-        int is_pmem;
-        char* tmp_file = map_pmem_file(thread_log, POOL_SIZE, &mapped_len, &is_pmem);
-        global_log[i] = new NVMLog(tmp_file, 0, mapped_len);
+        //size_t mapped_len;
+        //int is_pmem;
+        //char* tmp_file = map_pmem_file(thread_log, POOL_SIZE, &mapped_len, &is_pmem);
+        //global_log[i] = new NVMLog(tmp_file, 0, mapped_len);
+        global_log[i] = new NVMLog(thread_log, INIT_LOG_SIZE);
+    }
+
+    uint64_t req_per_log = total_num_req / GLOBAL_LOG_NUM;
+    uint64_t req_per_threads = total_num_req / thread_num;
+    for (int i = 0; i < thread_num; ++i) {
+        reqs.push_back(std::vector<int>);
+    }
+    srand((unsigned int) time(NULL));
+    for (int log_id = 0; log_id < GLOBAL_LOG_NUM; log_id++) {
+        // for each log
+        for(int i = 0; i < req_per_log; i++) {
+            // req_per_log reqs go to this log;
+            // distribute these reqs to a random thread;
+            int thread_id = rand() % thread_num;
+            while (reqs[thread_id].size() > req_per_threads) {
+                // skip the thead with reqs reaches limitation;
+                thread_id++;
+            }
+            reqs[thread_id].push_back(log_id);
+        }
     }
 }
 
@@ -121,6 +146,7 @@ void close_global_log() {
         delete global_log[i];
         global_log[i] = nullptr;
     }
+    reqs.clear();
 }
 
 static void BM_SingleThread(benchmark::State &state) {
@@ -205,9 +231,8 @@ static void BM_MultiThread_Limit(benchmark::State &state) {
     auto key_size = state.range(0);
     auto value_size = state.range(1);
     auto nums = state.range(2);
-    srand((unsigned int) time(NULL));
     if (state.thread_index == 0) {
-        init_global_log();
+        init_global_log(nums, state.threads);
     }
     for (auto _ : state) {
         //single_thread_append(state, key_size, value_size, nums / state.threads, global_log[rand() % GLOBAL_LOG_NUM]);
